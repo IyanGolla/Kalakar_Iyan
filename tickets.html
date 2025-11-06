@@ -580,20 +580,22 @@
         (function() {
             const clientId = window.PAYPAL_CLIENT_ID;
             
-            // Debug logging (remove in production if desired)
+            // Debug logging
             console.log('PayPal Client ID check:', {
-                clientId: clientId,
+                clientId: clientId ? clientId.substring(0, 20) + '...' : 'undefined',
                 type: typeof clientId,
-                length: clientId ? clientId.length : 0,
-                isPlaceholder: clientId === '%%PAYPAL_CLIENT_ID%%'
+                length: clientId ? clientId.length : 0
             });
             
             // Trim whitespace and check if it's a valid Client ID
             const trimmedClientId = clientId ? clientId.trim() : '';
+            // Check if it's a valid Client ID (PayPal Client IDs are typically 20+ characters)
+            // We check for length and that it's not empty, 'sb', or contains placeholder markers
             const isValidClientId = trimmedClientId && 
-                                   trimmedClientId !== '%%PAYPAL_CLIENT_ID%%' && 
+                                   trimmedClientId.length >= 20 && 
                                    trimmedClientId !== 'sb' &&
-                                   trimmedClientId.length > 10; // PayPal Client IDs are typically long
+                                   !trimmedClientId.startsWith('%%') &&
+                                   !trimmedClientId.endsWith('%%');
             
             if (!isValidClientId) {
                 console.error('PayPal Client ID not configured. Please set PAYPAL_CLIENT_ID environment variable in Vercel.');
