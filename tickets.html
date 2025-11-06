@@ -580,15 +580,31 @@
         (function() {
             const clientId = window.PAYPAL_CLIENT_ID;
             
-            if (!clientId || clientId === '%%PAYPAL_CLIENT_ID%%' || clientId === 'sb') {
+            // Debug logging (remove in production if desired)
+            console.log('PayPal Client ID check:', {
+                clientId: clientId,
+                type: typeof clientId,
+                length: clientId ? clientId.length : 0,
+                isPlaceholder: clientId === '%%PAYPAL_CLIENT_ID%%'
+            });
+            
+            // Trim whitespace and check if it's a valid Client ID
+            const trimmedClientId = clientId ? clientId.trim() : '';
+            const isValidClientId = trimmedClientId && 
+                                   trimmedClientId !== '%%PAYPAL_CLIENT_ID%%' && 
+                                   trimmedClientId !== 'sb' &&
+                                   trimmedClientId.length > 10; // PayPal Client IDs are typically long
+            
+            if (!isValidClientId) {
                 console.error('PayPal Client ID not configured. Please set PAYPAL_CLIENT_ID environment variable in Vercel.');
-                // Still try to load with sandbox for error visibility, but show error to user
                 window.paypalClientIdError = true;
-                // Don't return - let it try to load so we can show a proper error
+            } else {
+                // Client ID is valid, clear any previous error
+                window.paypalClientIdError = false;
             }
             
-            // Use the clientId or fallback to sandbox for error testing
-            const finalClientId = (clientId && clientId !== '%%PAYPAL_CLIENT_ID%%' && clientId !== 'sb') ? clientId : 'sb';
+            // Use the valid Client ID or fallback to sandbox for error visibility
+            const finalClientId = isValidClientId ? trimmedClientId : 'sb';
             
             const script = document.createElement('script');
             script.src = `https://www.paypal.com/sdk/js?client-id=${finalClientId}&currency=USD&enable-funding=venmo`;
