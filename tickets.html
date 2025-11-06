@@ -580,12 +580,13 @@
         (function() {
             const clientId = window.PAYPAL_CLIENT_ID;
             
-            // Debug logging
-            console.log('PayPal Client ID check:', {
-                clientId: clientId ? clientId.substring(0, 20) + '...' : 'undefined',
-                type: typeof clientId,
-                length: clientId ? clientId.length : 0
-            });
+            // Debug logging (removed sensitive data for security)
+            // Only log length, not actual Client ID
+            if (clientId && clientId.length >= 20) {
+                console.log('PayPal Client ID configured successfully (length: ' + clientId.length + ')');
+            } else {
+                console.warn('PayPal Client ID validation failed');
+            }
             
             // Trim whitespace and check if it's a valid Client ID
             const trimmedClientId = clientId ? clientId.trim() : '';
@@ -843,14 +844,36 @@
             const modalTitle = document.getElementById('modal-title');
             const modalBody = document.getElementById('modal-body');
 
+            // Sanitize inputs to prevent XSS
+            const sanitize = (str) => {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            };
+
             modalHeader.className = 'modal-header success';
             modalTitle.textContent = '✓ Payment Successful';
-            modalBody.innerHTML = `
-                <p><strong>${title}</strong></p>
-                <p>${message}</p>
-                <p>Transaction ID: <span class="transaction-id">${transactionId}</span></p>
-                <p>Order ID: <span class="transaction-id">${orderId}</span></p>
-            `;
+            
+            // Use textContent and create elements to prevent XSS
+            modalBody.innerHTML = '';
+            const titleP = document.createElement('p');
+            const titleStrong = document.createElement('strong');
+            titleStrong.textContent = sanitize(title);
+            titleP.appendChild(titleStrong);
+            modalBody.appendChild(titleP);
+            
+            const messageP = document.createElement('p');
+            messageP.textContent = sanitize(message);
+            modalBody.appendChild(messageP);
+            
+            const transIdP = document.createElement('p');
+            transIdP.innerHTML = 'Transaction ID: <span class="transaction-id">' + sanitize(transactionId) + '</span>';
+            modalBody.appendChild(transIdP);
+            
+            const orderIdP = document.createElement('p');
+            orderIdP.innerHTML = 'Order ID: <span class="transaction-id">' + sanitize(orderId) + '</span>';
+            modalBody.appendChild(orderIdP);
 
             modalOverlay.classList.add('show');
         }
@@ -861,12 +884,28 @@
             const modalTitle = document.getElementById('modal-title');
             const modalBody = document.getElementById('modal-body');
 
+            // Sanitize inputs to prevent XSS
+            const sanitize = (str) => {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            };
+
             modalHeader.className = 'modal-header error';
             modalTitle.textContent = '✗ Payment Error';
-            modalBody.innerHTML = `
-                <p><strong>${title}</strong></p>
-                <p>${message}</p>
-            `;
+            
+            // Use textContent and create elements to prevent XSS
+            modalBody.innerHTML = '';
+            const titleP = document.createElement('p');
+            const titleStrong = document.createElement('strong');
+            titleStrong.textContent = sanitize(title);
+            titleP.appendChild(titleStrong);
+            modalBody.appendChild(titleP);
+            
+            const messageP = document.createElement('p');
+            messageP.textContent = sanitize(message);
+            modalBody.appendChild(messageP);
 
             modalOverlay.classList.add('show');
         }
@@ -934,25 +973,53 @@
                     label: 'pay'
                 },
                 createOrder: function(data, actions) {
+                    // Security: Validate quantities before creating order
+                    if (adultQty < 0 || adultQty > 10 || childQty < 0 || childQty > 10) {
+                        hideLoadingOverlay();
+                        showErrorModal(
+                            'Invalid Quantity',
+                            'Ticket quantities must be between 0 and 10. Please adjust your selection.'
+                        );
+                        return Promise.reject(new Error('Invalid quantity'));
+                    }
+                    
+                    // Security: Validate subtotal
+                    if (currentSubtotal <= 0 || currentSubtotal > 1000) {
+                        hideLoadingOverlay();
+                        showErrorModal(
+                            'Invalid Amount',
+                            'Order total is invalid. Please refresh and try again.'
+                        );
+                        return Promise.reject(new Error('Invalid amount'));
+                    }
+                    
                     // Show loading overlay
                     showLoadingOverlay();
                     
                     try {
+                        const orderAmount = currentSubtotal.toFixed(2);
+                        
                         return actions.order.create({
                             purchase_units: [{
                                 description: 'Concert Tickets - The Kalakar Club',
                                 amount: {
                                     currency_code: 'USD',
-                                    value: currentSubtotal.toFixed(2),
+                                    value: orderAmount,
                                     breakdown: {
                                         item_total: {
                                             currency_code: 'USD',
-                                            value: currentSubtotal.toFixed(2)
+                                            value: orderAmount
                                         }
                                     }
                                 },
                                 items: items
-                            }]
+                            }],
+                            // Security: Add application context for better tracking
+                            application_context: {
+                                brand_name: 'The Kalakar Club',
+                                landing_page: 'NO_PREFERENCE',
+                                user_action: 'PAY_NOW'
+                            }
                         }).catch(function(err) {
                             // Hide loading if order creation fails
                             hideLoadingOverlay();
@@ -977,21 +1044,59 @@
                     // Keep loading visible during capture
                     // Note: Loading overlay should already be visible from createOrder
                     
+                    // Store expected amount for verification
+                    const expectedAmount = currentSubtotal.toFixed(2);
+                    
                     return actions.order.capture().then(function(details) {
                         // Hide loading overlay
                         hideLoadingOverlay();
                         
-                        // Success! Transaction completed
-                        const payerName = details.payer?.name?.given_name || details.payer?.name?.surname || 'Customer';
+                        // Security: Validate payment status
+                        if (details.status !== 'COMPLETED') {
+                            console.error('Payment not completed. Status:', details.status);
+                            showErrorModal(
+                                'Payment Status Error',
+                                'Payment was not completed. Please contact support if you were charged.'
+                            );
+                            return;
+                        }
                         
-                        // Optional: Send verification to server
+                        // Security: Verify captured amount matches expected amount
+                        const capturedAmount = details.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value;
+                        if (capturedAmount && parseFloat(capturedAmount) !== parseFloat(expectedAmount)) {
+                            console.error('Amount mismatch. Expected:', expectedAmount, 'Captured:', capturedAmount);
+                            showErrorModal(
+                                'Payment Verification Error',
+                                'Payment amount does not match order total. Please contact support immediately.'
+                            );
+                            return;
+                        }
+                        
+                        // Security: Validate required fields
+                        if (!details.id || !details.orderID) {
+                            console.error('Missing transaction details:', details);
+                            showErrorModal(
+                                'Payment Verification Error',
+                                'Payment completed but verification failed. Please contact support with your order details.'
+                            );
+                            return;
+                        }
+                        
+                        // Success! Transaction completed and verified
+                        // Sanitize payer name to prevent XSS
+                        const payerName = (details.payer?.name?.given_name || details.payer?.name?.surname || 'Customer')
+                            .replace(/[<>]/g, ''); // Basic XSS prevention
+                        
+                        // TODO: Send verification to server for additional security
+                        // This should be implemented server-side to verify payment with PayPal API
                         // fetch('/api/verify-payment', {
                         //     method: 'POST',
                         //     headers: { 'Content-Type': 'application/json' },
                         //     body: JSON.stringify({
                         //         orderID: details.orderID,
                         //         transactionID: details.id,
-                        //         payer: details.payer
+                        //         amount: capturedAmount || expectedAmount,
+                        //         status: details.status
                         //     })
                         // }).catch(err => console.error('Server verification failed:', err));
                         
@@ -1004,8 +1109,14 @@
                         );
                         
                         // Redirect to confirmation page after a delay
+                        // Sanitize URLs to prevent XSS
+                        const sanitizeUrl = (url) => {
+                            return url.replace(/[^a-zA-Z0-9\-_]/g, '');
+                        };
                         setTimeout(() => {
-                            window.location.href = `thank-you.html?order=${details.orderID}&transaction=${details.id}`;
+                            const orderId = sanitizeUrl(details.orderID);
+                            const transactionId = sanitizeUrl(details.id);
+                            window.location.href = `thank-you.html?order=${orderId}&transaction=${transactionId}`;
                         }, 3000);
                     }).catch(function(err) {
                         // Hide loading on error
