@@ -582,11 +582,16 @@
             
             if (!clientId || clientId === '%%PAYPAL_CLIENT_ID%%' || clientId === 'sb') {
                 console.error('PayPal Client ID not configured. Please set PAYPAL_CLIENT_ID environment variable in Vercel.');
-                return;
+                // Still try to load with sandbox for error visibility, but show error to user
+                window.paypalClientIdError = true;
+                // Don't return - let it try to load so we can show a proper error
             }
             
+            // Use the clientId or fallback to sandbox for error testing
+            const finalClientId = (clientId && clientId !== '%%PAYPAL_CLIENT_ID%%' && clientId !== 'sb') ? clientId : 'sb';
+            
             const script = document.createElement('script');
-            script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&enable-funding=venmo`;
+            script.src = `https://www.paypal.com/sdk/js?client-id=${finalClientId}&currency=USD&enable-funding=venmo`;
             script.async = true;
             script.onload = function() {
                 window.paypalSDKLoaded = true;
@@ -596,6 +601,7 @@
             script.onerror = function() {
                 console.error('PayPal SDK failed to load. Please check your internet connection and Client ID.');
                 window.paypalSDKLoaded = false;
+                window.dispatchEvent(new Event('paypalSDKError'));
             };
             document.head.appendChild(script);
         })();
@@ -707,20 +713,65 @@
             // Show PayPal container
             paypalContainer.classList.add('show');
 
-            // Wait for PayPal SDK to load if needed, then render buttons
-            if (typeof paypal === 'undefined') {
-                // Wait for SDK to load
-                window.addEventListener('paypalSDKReady', function() {
-                    if (!paypalButtonsRendered) {
-                        renderPayPalButtons();
-                    }
-                }, { once: true });
-            } else {
-                // SDK already loaded, render buttons
+            // Check if Client ID is configured
+            if (window.paypalClientIdError) {
+                paypalButtonContainer.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #f87171; background: rgba(248, 113, 113, 0.1); border-radius: 8px; border: 1px solid rgba(248, 113, 113, 0.3);">
+                        <strong>Configuration Error</strong><br>
+                        PayPal Client ID is not configured. Please set PAYPAL_CLIENT_ID environment variable in Vercel Dashboard.
+                    </div>
+                `;
+                return;
+            }
+
+            // Function to attempt rendering PayPal buttons
+            function attemptRenderButtons() {
+                if (typeof paypal === 'undefined') {
+                    console.warn('PayPal SDK not loaded yet, waiting...');
+                    // Wait a bit longer and try again
+                    setTimeout(function() {
+                        if (typeof paypal !== 'undefined') {
+                            if (!paypalButtonsRendered) {
+                                renderPayPalButtons();
+                            }
+                        } else {
+                            // Still not loaded, show error
+                            paypalButtonContainer.innerHTML = `
+                                <div style="padding: 20px; text-align: center; color: #f87171; background: rgba(248, 113, 113, 0.1); border-radius: 8px; border: 1px solid rgba(248, 113, 113, 0.3);">
+                                    <strong>Loading Error</strong><br>
+                                    PayPal payment system failed to load. Please refresh the page and try again.
+                                </div>
+                            `;
+                        }
+                    }, 2000);
+                    return;
+                }
+
+                // SDK is loaded, render buttons
                 if (!paypalButtonsRendered) {
                     renderPayPalButtons();
                 }
             }
+
+            // Try to render immediately
+            attemptRenderButtons();
+
+            // Also listen for SDK ready event as backup
+            window.addEventListener('paypalSDKReady', function() {
+                if (!paypalButtonsRendered) {
+                    renderPayPalButtons();
+                }
+            }, { once: true });
+
+            // Listen for SDK errors
+            window.addEventListener('paypalSDKError', function() {
+                paypalButtonContainer.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #f87171; background: rgba(248, 113, 113, 0.1); border-radius: 8px; border: 1px solid rgba(248, 113, 113, 0.3);">
+                        <strong>PayPal SDK Error</strong><br>
+                        Failed to load PayPal payment system. Please check your internet connection and try again.
+                    </div>
+                `;
+            }, { once: true });
         });
 
         /* ============================================
