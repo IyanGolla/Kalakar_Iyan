@@ -29,3 +29,4 @@ Thumbs.db
 
 # PayPal Configuration (contains sensitive Client ID)
 paypal-config.js
+.vercel

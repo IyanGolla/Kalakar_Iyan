@@ -1,0 +1,21 @@
+{
+  "name": "band-website",
+  "version": "1.0.0",
+  "main": "paypal-config.example.js",
+  "scripts": {
+    "build": "node build.js",
+    "vercel-build": "node build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IyanGolla/Kalakar_Iyan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IyanGolla/Kalakar_Iyan/issues"
+  },
+  "homepage": "https://github.com/IyanGolla/Kalakar_Iyan#readme",
+  "description": ""
+}
