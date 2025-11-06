@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - The Kalakar Club</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .confirmation-container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            color: #4ade80;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #fff 0%, #a8d5e2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .confirmation-message {
+            font-size: 1.1rem;
+            color: #b8c5d1;
+            margin-bottom: 30px;
+        }
+
+        .order-details {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .order-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .order-detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .order-detail-label {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .order-detail-value {
+            font-family: monospace;
+            color: #a8d5e2;
+            word-break: break-all;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .action-button {
+            padding: 15px 30px;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .action-button:hover {
+            background: linear-gradient(135deg, #5a9ef2 0%, #458acd 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        .email-notice {
+            background: rgba(74, 144, 226, 0.15);
+            border: 2px solid rgba(74, 144, 226, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            color: #a8d5e2;
+        }
+
+        @media (max-width: 768px) {
+            .confirmation-container {
+                padding: 25px 20px;
+                margin: 20px auto;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .order-detail-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .order-detail-value {
+                max-width: 100%;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="confirmation-container">
+        <div class="success-icon">✓</div>
+        <h1>Thank You for Your Purchase!</h1>
+        <p class="confirmation-message">Your order has been confirmed. You will receive a confirmation email shortly.</p>
+
+        <div class="order-details" id="order-details">
+            <!-- Order details will be populated from URL parameters -->
+            <div class="order-detail-row">
+                <span class="order-detail-label">Order ID:</span>
+                <span class="order-detail-value" id="order-id">Loading...</span>
+            </div>
+            <div class="order-detail-row" id="transaction-row" style="display: none;">
+                <span class="order-detail-label">Transaction ID:</span>
+                <span class="order-detail-value" id="transaction-id"></span>
+            </div>
+        </div>
+
+        <div class="email-notice">
+            <strong>📧 Check your email</strong><br>
+            A confirmation email with your ticket details has been sent to your email address.
+        </div>
+
+        <a href="tickets.html" class="action-button">Purchase More Tickets</a>
+    </div>
+
+    <script>
+        // Parse URL parameters and display order details
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order');
+        const transactionId = urlParams.get('transaction');
+
+        if (orderId) {
+            document.getElementById('order-id').textContent = orderId;
+        } else {
+            document.getElementById('order-id').textContent = 'Not available';
+        }
+
+        if (transactionId) {
+            document.getElementById('transaction-id').textContent = transactionId;
+            document.getElementById('transaction-row').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
+

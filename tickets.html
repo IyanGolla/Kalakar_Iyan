@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Tickets - The Kalakar Club</title>
+    <style>
+        /* ============================================
+           GLOBAL STYLES - Matching thekalakarclub.com
+           ============================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           CONTAINER & CARD STYLING
+           ============================================ */
+        
+        .page-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .ticket-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #fff 0%, #a8d5e2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            color: #b8c5d1;
+        }
+
+        /* ============================================
+           TICKET SELECTION FORM
+           ============================================ */
+        
+        .ticket-form {
+            margin-bottom: 30px;
+        }
+
+        .ticket-type {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 20px;
+            align-items: center;
+            padding: 25px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .ticket-type:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .ticket-label {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .ticket-label .ticket-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .ticket-label .ticket-price {
+            font-size: 1rem;
+            color: #a8d5e2;
+        }
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-input {
+            width: 80px;
+            padding: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            font-size: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .quantity-input:focus {
+            outline: none;
+            border-color: #4a90e2;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .quantity-input::-webkit-inner-spin-button,
+        .quantity-input::-webkit-outer-spin-button {
+            opacity: 1;
+            height: 30px;
+        }
+
+        .line-total {
+            min-width: 100px;
+            text-align: right;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #4a90e2;
+        }
+
+        /* ============================================
+           SUBTOTAL SECTION
+           ============================================ */
+        
+        .subtotal-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(74, 144, 226, 0.15);
+            border-radius: 12px;
+            border: 2px solid rgba(74, 144, 226, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .subtotal-label {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .subtotal-amount {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4a90e2;
+        }
+
+        /* ============================================
+           BUTTONS
+           ============================================ */
+        
+        .proceed-button {
+            width: 100%;
+            padding: 18px 30px;
+            margin-top: 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .proceed-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a9ef2 0%, #458acd 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+
+        .proceed-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .proceed-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ============================================
+           PAYPAL CONTAINER
+           ============================================ */
+        
+        .paypal-container {
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+
+        .paypal-container.show {
+            display: block;
+        }
+
+        .paypal-header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #a8d5e2;
+            font-size: 1.1rem;
+        }
+
+        #paypal-button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* ============================================
+           RESPONSIVE DESIGN
+           ============================================ */
+        
+        @media (max-width: 768px) {
+            .page-container {
+                padding: 20px 10px;
+            }
+
+            .ticket-card {
+                padding: 25px 20px;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .ticket-type {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .line-total {
+                text-align: left;
+            }
+
+            .subtotal-section {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .subtotal-amount {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .ticket-label .ticket-name {
+                font-size: 1rem;
+            }
+
+            .proceed-button {
+                font-size: 1rem;
+                padding: 15px 20px;
+            }
+        }
+
+        /* ============================================
+           LOADING & ANIMATIONS
+           ============================================ */
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============================================
+           LOADING OVERLAY
+           ============================================ */
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            backdrop-filter: blur(5px);
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #4a90e2;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            color: #ffffff;
+            font-size: 1.1rem;
+        }
+
+        /* ============================================
+           SUCCESS/ERROR MODAL STYLING
+           ============================================ */
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header.success {
+            color: #4ade80;
+        }
+
+        .modal-header.error {
+            color: #f87171;
+        }
+
+        .modal-header h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .modal-body {
+            color: #ffffff;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .modal-body p {
+            margin-bottom: 10px;
+        }
+
+        .transaction-id {
+            font-family: monospace;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+            font-size: 0.9rem;
+            color: #a8d5e2;
+            word-break: break-all;
+        }
+
+        .modal-footer {
+            text-align: center;
+        }
+
+        .modal-button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-button:hover {
+            background: linear-gradient(135deg, #5a9ef2 0%, #458acd 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="ticket-card fade-in">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>Purchase Tickets</h1>
+                <p>Select your tickets and proceed to checkout</p>
+            </div>
+
+            <!-- Ticket Selection Form -->
+            <form id="ticket-form" class="ticket-form">
+                <!-- Adult Ticket -->
+                <div class="ticket-type">
+                    <div class="ticket-label">
+                        <span class="ticket-name">Adult Ticket</span>
+                        <span class="ticket-price">$0.02 per ticket</span>
+                    </div>
+                    <div class="quantity-control">
+                        <input 
+                            type="number" 
+                            id="adult-quantity" 
+                            class="quantity-input"
+                            min="0" 
+                            max="10" 
+                            value="0"
+                            aria-label="Adult ticket quantity"
+                        >
+                    </div>
+                    <div class="line-total" id="adult-total">$0.00</div>
+                </div>
+
+                <!-- Child Ticket -->
+                <div class="ticket-type">
+                    <div class="ticket-label">
+                        <span class="ticket-name">Child Ticket</span>
+                        <span class="ticket-price">$0.01 per ticket</span>
+                    </div>
+                    <div class="quantity-control">
+                        <input 
+                            type="number" 
+                            id="child-quantity" 
+                            class="quantity-input"
+                            min="0" 
+                            max="10" 
+                            value="0"
+                            aria-label="Child ticket quantity"
+                        >
+                    </div>
+                    <div class="line-total" id="child-total">$0.00</div>
+                </div>
+
+                <!-- Subtotal Section -->
+                <div class="subtotal-section">
+                    <span class="subtotal-label">Subtotal:</span>
+                    <span class="subtotal-amount" id="subtotal">$0.00</span>
+                </div>
+
+                <!-- Proceed to Payment Button -->
+                <button 
+                    type="button" 
+                    id="proceed-to-payment" 
+                    class="proceed-button"
+                    disabled
+                >
+                    Proceed to Payment
+                </button>
+            </form>
+
+            <!-- PayPal Checkout Container -->
+            <div id="paypal-container" class="paypal-container">
+                <div class="paypal-header">
+                    Complete your purchase securely with PayPal, Venmo, Credit Card, or Debit Card
+                </div>
+                <div id="paypal-button-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div style="text-align: center;">
+            <div class="spinner"></div>
+            <div class="loading-text">Processing payment...</div>
+        </div>
+    </div>
+
+    <!-- Success/Error Modal -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header" id="modal-header">
+                <h2 id="modal-title"></h2>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer">
+                <button class="modal-button" id="modal-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PayPal Config -->
+    <!-- 
+        IMPORTANT: Before deploying to production, replace the Client ID in paypal-config.js 
+        with your Live PayPal Client ID. Do NOT commit paypal-config.js to version control.
+        See paypal-config.example.js for the template.
+    -->
+    <script src="paypal-config.js"></script>
+    
+    <!-- PayPal SDK -->
+    <script>
+        // Load PayPal SDK with client ID from config
+        (function() {
+            const script = document.createElement('script');
+            script.src = `https://www.paypal.com/sdk/js?client-id=${window.PAYPAL_CLIENT_ID || 'sb'}&currency=USD&enable-funding=venmo`;
+            script.async = true;
+            script.onload = function() {
+                window.paypalSDKLoaded = true;
+                // Dispatch event to notify that SDK is ready
+                window.dispatchEvent(new Event('paypalSDKReady'));
+            };
+            script.onerror = function() {
+                console.error('PayPal SDK failed to load. Please check your internet connection and Client ID.');
+                window.paypalSDKLoaded = false;
+            };
+            document.head.appendChild(script);
+        })();
+    </script>
+
+    <script>
+        /* ============================================
+           TICKET PRICING CONFIGURATION
+           ============================================ */
+        
+        const TICKET_PRICES = {
+            adult: 0.02,
+            child: 0.01
+        };
+
+        /* ============================================
+           DOM ELEMENT REFERENCES
+           ============================================ */
+        
+        const adultQuantityInput = document.getElementById('adult-quantity');
+        const childQuantityInput = document.getElementById('child-quantity');
+        const adultTotalDisplay = document.getElementById('adult-total');
+        const childTotalDisplay = document.getElementById('child-total');
+        const subtotalDisplay = document.getElementById('subtotal');
+        const proceedButton = document.getElementById('proceed-to-payment');
+        const paypalContainer = document.getElementById('paypal-container');
+        const paypalButtonContainer = document.getElementById('paypal-button-container');
+
+        /* ============================================
+           CALCULATION STATE
+           ============================================ */
+        
+        let currentSubtotal = 0.00;
+        let adultQty = 0;
+        let childQty = 0;
+        let paypalButtonsRendered = false;
+
+        /* ============================================
+           FORMAT CURRENCY HELPER
+           ============================================ */
+        
+        function formatCurrency(amount) {
+            return `$${amount.toFixed(2)}`;
+        }
+
+        /* ============================================
+           UPDATE TOTALS FUNCTION
+           ============================================ */
+        
+        function updateTotals() {
+            // Get current quantities
+            adultQty = parseInt(adultQuantityInput.value) || 0;
+            childQty = parseInt(childQuantityInput.value) || 0;
+
+            // Ensure quantities are within valid range
+            if (adultQty < 0) adultQty = 0;
+            if (adultQty > 10) adultQty = 10;
+            if (childQty < 0) childQty = 0;
+            if (childQty > 10) childQty = 10;
+
+            // Update input values if they were out of range
+            adultQuantityInput.value = adultQty;
+            childQuantityInput.value = childQty;
+
+            // Calculate line totals
+            const adultLineTotal = adultQty * TICKET_PRICES.adult;
+            const childLineTotal = childQty * TICKET_PRICES.child;
+
+            // Calculate subtotal
+            currentSubtotal = adultLineTotal + childLineTotal;
+
+            // Update displays
+            adultTotalDisplay.textContent = formatCurrency(adultLineTotal);
+            childTotalDisplay.textContent = formatCurrency(childLineTotal);
+            subtotalDisplay.textContent = formatCurrency(currentSubtotal);
+
+            // Enable/disable proceed button based on subtotal
+            proceedButton.disabled = currentSubtotal <= 0;
+
+            // If subtotal becomes 0, hide PayPal container
+            if (currentSubtotal <= 0 && paypalContainer.classList.contains('show')) {
+                paypalContainer.classList.remove('show');
+                paypalButtonContainer.innerHTML = '';
+                paypalButtonsRendered = false;
+            }
+        }
+
+        /* ============================================
+           EVENT LISTENERS FOR QUANTITY INPUTS
+           ============================================ */
+        
+        adultQuantityInput.addEventListener('input', updateTotals);
+        childQuantityInput.addEventListener('input', updateTotals);
+
+        // Also listen for change events to handle manual edits
+        adultQuantityInput.addEventListener('change', updateTotals);
+        childQuantityInput.addEventListener('change', updateTotals);
+
+        /* ============================================
+           PROCEED TO PAYMENT BUTTON HANDLER
+           ============================================ */
+        
+        proceedButton.addEventListener('click', function() {
+            // Only proceed if subtotal is greater than 0
+            if (currentSubtotal <= 0) {
+                return;
+            }
+
+            // Show PayPal container
+            paypalContainer.classList.add('show');
+
+            // Wait for PayPal SDK to load if needed, then render buttons
+            if (typeof paypal === 'undefined') {
+                // Wait for SDK to load
+                window.addEventListener('paypalSDKReady', function() {
+                    if (!paypalButtonsRendered) {
+                        renderPayPalButtons();
+                    }
+                }, { once: true });
+            } else {
+                // SDK already loaded, render buttons
+                if (!paypalButtonsRendered) {
+                    renderPayPalButtons();
+                }
+            }
+        });
+
+        /* ============================================
+           MODAL HELPER FUNCTIONS
+           ============================================ */
+
+        function showSuccessModal(title, message, transactionId, orderId) {
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalHeader = document.getElementById('modal-header');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+
+            modalHeader.className = 'modal-header success';
+            modalTitle.textContent = '✓ Payment Successful';
+            modalBody.innerHTML = `
+                <p><strong>${title}</strong></p>
+                <p>${message}</p>
+                <p>Transaction ID: <span class="transaction-id">${transactionId}</span></p>
+                <p>Order ID: <span class="transaction-id">${orderId}</span></p>
+            `;
+
+            modalOverlay.classList.add('show');
+        }
+
+        function showErrorModal(title, message) {
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalHeader = document.getElementById('modal-header');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+
+            modalHeader.className = 'modal-header error';
+            modalTitle.textContent = '✗ Payment Error';
+            modalBody.innerHTML = `
+                <p><strong>${title}</strong></p>
+                <p>${message}</p>
+            `;
+
+            modalOverlay.classList.add('show');
+        }
+
+        // Close modal handler
+        document.getElementById('modal-close-btn').addEventListener('click', function() {
+            document.getElementById('modal-overlay').classList.remove('show');
+        });
+
+        // Close modal on overlay click
+        document.getElementById('modal-overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('show');
+            }
+        });
+
+        /* ============================================
+           PAYPAL BUTTONS RENDERING
+           ============================================ */
+        
+        function renderPayPalButtons() {
+            // Check if PayPal SDK is loaded
+            if (typeof paypal === 'undefined') {
+                console.error('PayPal SDK not loaded yet. Please wait and try again.');
+                showErrorModal(
+                    'Payment System Error',
+                    'PayPal payment system is still loading. Please wait a moment and try again.'
+                );
+                return;
+            }
+
+            // Clear any existing buttons
+            paypalButtonContainer.innerHTML = '';
+
+            // Build line items array for PayPal
+            const items = [];
+            if (adultQty > 0) {
+                items.push({
+                    name: `Adult Ticket${adultQty > 1 ? ` (x${adultQty})` : ''}`,
+                    unit_amount: {
+                        currency_code: 'USD',
+                        value: TICKET_PRICES.adult.toFixed(2)
+                    },
+                    quantity: adultQty.toString()
+                });
+            }
+            if (childQty > 0) {
+                items.push({
+                    name: `Child Ticket${childQty > 1 ? ` (x${childQty})` : ''}`,
+                    unit_amount: {
+                        currency_code: 'USD',
+                        value: TICKET_PRICES.child.toFixed(2)
+                    },
+                    quantity: childQty.toString()
+                });
+            }
+
+            // Render PayPal buttons (includes PayPal, Venmo, Credit Card, and Debit Card)
+            // Venmo is enabled via enable-funding=venmo in the SDK URL
+            paypal.Buttons({
+                style: {
+                    layout: 'vertical',
+                    color: 'blue',
+                    shape: 'rect',
+                    label: 'pay'
+                },
+                createOrder: function(data, actions) {
+                    // Show loading overlay
+                    document.getElementById('loading-overlay').classList.add('show');
+                    
+                    return actions.order.create({
+                        purchase_units: [{
+                            description: 'Concert Tickets - The Kalakar Club',
+                            amount: {
+                                currency_code: 'USD',
+                                value: currentSubtotal.toFixed(2),
+                                breakdown: {
+                                    item_total: {
+                                        currency_code: 'USD',
+                                        value: currentSubtotal.toFixed(2)
+                                    }
+                                }
+                            },
+                            items: items
+                        }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    // Keep loading visible during capture
+                    return actions.order.capture().then(function(details) {
+                        // Hide loading overlay
+                        document.getElementById('loading-overlay').classList.remove('show');
+                        
+                        // Success! Transaction completed
+                        const payerName = details.payer.name.given_name || 'Customer';
+                        
+                        // Optional: Send verification to server
+                        // fetch('/api/verify-payment', {
+                        //     method: 'POST',
+                        //     headers: { 'Content-Type': 'application/json' },
+                        //     body: JSON.stringify({
+                        //         orderID: details.orderID,
+                        //         transactionID: details.id,
+                        //         payer: details.payer
+                        //     })
+                        // }).catch(err => console.error('Server verification failed:', err));
+                        
+                        // Show success modal
+                        showSuccessModal(
+                            'Thank you for your purchase, ' + payerName + '!',
+                            'Your tickets have been confirmed. You will receive a confirmation email shortly.',
+                            details.id,
+                            details.orderID
+                        );
+                        
+                        // Redirect to confirmation page after a delay
+                        setTimeout(() => {
+                            window.location.href = `thank-you.html?order=${details.orderID}&transaction=${details.id}`;
+                        }, 3000);
+                    }).catch(function(err) {
+                        // Hide loading on error
+                        document.getElementById('loading-overlay').classList.remove('show');
+                        console.error('Payment capture error:', err);
+                        showErrorModal(
+                            'Payment Error',
+                            'An error occurred while processing your payment. Please try again or contact support if the problem persists.'
+                        );
+                    });
+                },
+                onError: function(err) {
+                    // Hide loading on error
+                    document.getElementById('loading-overlay').classList.remove('show');
+                    console.error('PayPal error:', err);
+                    showErrorModal(
+                        'Payment Error',
+                        'An error occurred during the payment process. Please try again or contact support if the problem persists.'
+                    );
+                },
+                onCancel: function(data) {
+                    // Hide loading on cancel
+                    document.getElementById('loading-overlay').classList.remove('show');
+                    console.log('PayPal payment cancelled:', data);
+                    // User cancelled the payment - no action needed
+                }
+            }).render('#paypal-button-container');
+
+            paypalButtonsRendered = true;
+        }
+
+        /* ============================================
+           RESET FORM FUNCTION
+           ============================================ */
+        
+        function resetForm() {
+            adultQuantityInput.value = 0;
+            childQuantityInput.value = 0;
+            updateTotals();
+            paypalContainer.classList.remove('show');
+            paypalButtonContainer.innerHTML = '';
+            paypalButtonsRendered = false;
+        }
+
+        /* ============================================
+           INITIALIZE ON PAGE LOAD
+           ============================================ */
+        
+        // Initialize totals on page load
+        updateTotals();
+
+        // Check PayPal SDK loading status
+        window.addEventListener('paypalSDKReady', function() {
+            console.log('PayPal SDK loaded successfully');
+        }, { once: true });
+        
+        // Fallback check after a delay
+        setTimeout(function() {
+            if (typeof paypal === 'undefined' && !window.paypalSDKLoaded) {
+                console.warn('PayPal SDK may not have loaded. Please check your internet connection and Client ID.');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
+
