@@ -1,19 +1,8 @@
 {
-  "version": 2,
-  "buildCommand": "node build.js",
-  "outputDirectory": ".",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/tickets.html",
-      "dest": "/tickets.html"
-    },
-    {
-      "src": "/thank-you.html",
-      "dest": "/thank-you.html"
-    },
-    {
-      "src": "/",
-      "dest": "/tickets.html"
+      "source": "/",
+      "destination": "/tickets.html"
     }
   ]
 }
