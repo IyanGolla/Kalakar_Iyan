@@ -4,9 +4,15 @@ const path = require('path');
 
 try {
     // Get PayPal Client ID from environment variable (Vercel will provide this)
-    const paypalClientId = process.env.PAYPAL_CLIENT_ID || 'sb';
+    const paypalClientId = process.env.PAYPAL_CLIENT_ID;
+    
+    if (!paypalClientId) {
+        console.error('ERROR: PAYPAL_CLIENT_ID environment variable is not set!');
+        console.error('Please set PAYPAL_CLIENT_ID in Vercel Dashboard -> Settings -> Environment Variables');
+        process.exit(1);
+    }
 
-    console.log('Building with PayPal Client ID:', paypalClientId !== 'sb' ? paypalClientId.substring(0, 10) + '...' : 'not set (using sandbox default)');
+    console.log('Building with PayPal Client ID:', paypalClientId.substring(0, 10) + '...');
 
     // Read the HTML file
     const htmlPath = path.join(__dirname, 'tickets.html');

@@ -27,6 +27,5 @@ Thumbs.db
 *.swo
 *~
 
-# PayPal Configuration (contains sensitive Client ID)
-paypal-config.js
+# Vercel
 .vercel

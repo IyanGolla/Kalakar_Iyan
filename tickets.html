@@ -565,39 +565,39 @@
 
     <!-- PayPal Config -->
     <!-- 
-        IMPORTANT: PayPal Client ID can be set in two ways:
-        1. Local development: Create paypal-config.js (see paypal-config.example.js)
-        2. Vercel production: Set PAYPAL_CLIENT_ID environment variable in Vercel dashboard
-        The build script will inject the Client ID from environment variables during deployment.
+        IMPORTANT: PayPal Client ID is set via PAYPAL_CLIENT_ID environment variable in Vercel.
+        Set it in: Vercel Dashboard -> Settings -> Environment Variables
+        The build script will inject the Client ID during deployment.
     -->
     <script id="paypal-config-inject">
-        // This will be replaced by build script with actual Client ID
-        window.PAYPAL_CLIENT_ID = window.PAYPAL_CLIENT_ID || '%%PAYPAL_CLIENT_ID%%';
+        // This will be replaced by build script with actual Client ID from Vercel
+        window.PAYPAL_CLIENT_ID = '%%PAYPAL_CLIENT_ID%%';
     </script>
-    <script src="paypal-config.js" onerror=""></script>
     
     <!-- PayPal SDK -->
     <script>
-        // Load PayPal SDK with client ID from config or environment variable
+        // Load PayPal SDK with client ID from Vercel environment variable
         (function() {
-            // Wait a moment for config to load, then proceed
-            setTimeout(function() {
-                const clientId = window.PAYPAL_CLIENT_ID || 'sb';
-                
-                const script = document.createElement('script');
-                script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&enable-funding=venmo`;
-                script.async = true;
-                script.onload = function() {
-                    window.paypalSDKLoaded = true;
-                    // Dispatch event to notify that SDK is ready
-                    window.dispatchEvent(new Event('paypalSDKReady'));
-                };
-                script.onerror = function() {
-                    console.error('PayPal SDK failed to load. Please check your internet connection and Client ID.');
-                    window.paypalSDKLoaded = false;
-                };
-                document.head.appendChild(script);
-            }, 100);
+            const clientId = window.PAYPAL_CLIENT_ID;
+            
+            if (!clientId || clientId === '%%PAYPAL_CLIENT_ID%%' || clientId === 'sb') {
+                console.error('PayPal Client ID not configured. Please set PAYPAL_CLIENT_ID environment variable in Vercel.');
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&enable-funding=venmo`;
+            script.async = true;
+            script.onload = function() {
+                window.paypalSDKLoaded = true;
+                // Dispatch event to notify that SDK is ready
+                window.dispatchEvent(new Event('paypalSDKReady'));
+            };
+            script.onerror = function() {
+                console.error('PayPal SDK failed to load. Please check your internet connection and Client ID.');
+                window.paypalSDKLoaded = false;
+            };
+            document.head.appendChild(script);
         })();
     </script>
 
