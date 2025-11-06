@@ -14,7 +14,13 @@ try {
 
     console.log('Building with PayPal Client ID:', paypalClientId.substring(0, 10) + '...');
 
-    // Read the HTML file
+    // Create build directory if it doesn't exist
+    const buildDir = path.join(__dirname, 'build');
+    if (!fs.existsSync(buildDir)) {
+        fs.mkdirSync(buildDir, { recursive: true });
+    }
+
+    // Read the source HTML file
     const htmlPath = path.join(__dirname, 'tickets.html');
     
     if (!fs.existsSync(htmlPath)) {
@@ -27,10 +33,19 @@ try {
     // Replace the placeholder %%PAYPAL_CLIENT_ID%% with actual value
     html = html.replace(/%%PAYPAL_CLIENT_ID%%/g, paypalClientId);
 
-    // Write the updated HTML
-    fs.writeFileSync(htmlPath, html, 'utf8');
+    // Write to build directory instead of modifying source
+    const buildHtmlPath = path.join(buildDir, 'tickets.html');
+    fs.writeFileSync(buildHtmlPath, html, 'utf8');
+
+    // Copy thank-you.html to build directory
+    const thankYouSource = path.join(__dirname, 'thank-you.html');
+    const thankYouDest = path.join(buildDir, 'thank-you.html');
+    if (fs.existsSync(thankYouSource)) {
+        fs.copyFileSync(thankYouSource, thankYouDest);
+    }
 
     console.log('Build complete. PayPal Client ID injected into tickets.html.');
+    console.log('Build output written to build/ directory.');
     console.log('Build successful - files are ready for deployment.');
 } catch (error) {
     console.error('Build error:', error);

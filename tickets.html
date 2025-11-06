@@ -590,10 +590,15 @@
             
             // Trim whitespace and check if it's a valid Client ID
             const trimmedClientId = clientId ? clientId.trim() : '';
-            // Check if it's a valid Client ID (PayPal Client IDs are typically 20+ characters)
-            // We check for length and that it's not empty, 'sb', or contains placeholder markers
+            
+            // Enhanced validation: Check PayPal Client ID format
+            // PayPal Client IDs are typically alphanumeric, 20-80 characters
+            // Format: Alphanumeric with possible hyphens and underscores
+            const paypalClientIdPattern = /^[A-Za-z0-9_-]{20,80}$/;
             const isValidClientId = trimmedClientId && 
                                    trimmedClientId.length >= 20 && 
+                                   trimmedClientId.length <= 80 &&
+                                   paypalClientIdPattern.test(trimmedClientId) &&
                                    trimmedClientId !== 'sb' &&
                                    !trimmedClientId.startsWith('%%') &&
                                    !trimmedClientId.endsWith('%%');
@@ -910,6 +915,58 @@
             modalOverlay.classList.add('show');
         }
 
+        function showErrorModalWithRetry(title, message, retryCallback) {
+            const modalOverlay = document.getElementById('modal-overlay');
+            const modalHeader = document.getElementById('modal-header');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalFooter = document.querySelector('.modal-footer');
+
+            // Sanitize inputs to prevent XSS
+            const sanitize = (str) => {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            };
+
+            modalHeader.className = 'modal-header error';
+            modalTitle.textContent = '✗ Payment Error';
+            
+            // Use textContent and create elements to prevent XSS
+            modalBody.innerHTML = '';
+            const titleP = document.createElement('p');
+            const titleStrong = document.createElement('strong');
+            titleStrong.textContent = sanitize(title);
+            titleP.appendChild(titleStrong);
+            modalBody.appendChild(titleP);
+            
+            const messageP = document.createElement('p');
+            messageP.textContent = sanitize(message);
+            modalBody.appendChild(messageP);
+
+            modalOverlay.classList.add('show');
+            
+            // Update modal footer with retry button
+            modalFooter.innerHTML = `
+                <button class="modal-button" id="modal-retry-btn" style="margin-right: 10px; background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);">Try Again</button>
+                <button class="modal-button" id="modal-close-btn">Close</button>
+            `;
+            
+            // Add retry handler
+            const retryBtn = document.getElementById('modal-retry-btn');
+            retryBtn.addEventListener('click', function() {
+                modalOverlay.classList.remove('show');
+                if (retryCallback) retryCallback();
+            }, { once: true });
+            
+            // Add close handler
+            const closeBtn = document.getElementById('modal-close-btn');
+            closeBtn.addEventListener('click', function() {
+                modalOverlay.classList.remove('show');
+            }, { once: true });
+        }
+
         // Close modal handler
         document.getElementById('modal-close-btn').addEventListener('click', function() {
             document.getElementById('modal-overlay').classList.remove('show');
@@ -1024,18 +1081,26 @@
                             // Hide loading if order creation fails
                             hideLoadingOverlay();
                             console.error('Order creation error:', err);
-                            showErrorModal(
+                            showErrorModalWithRetry(
                                 'Order Error',
-                                'Failed to create order. Please try again or contact support.'
+                                'Failed to create order. Would you like to try again?',
+                                function() {
+                                    // Retry order creation
+                                    proceedButton.click();
+                                }
                             );
                             throw err; // Re-throw to prevent further processing
                         });
                     } catch (err) {
                         hideLoadingOverlay();
                         console.error('Error creating order:', err);
-                        showErrorModal(
+                        showErrorModalWithRetry(
                             'Order Error',
-                            'An error occurred while creating your order. Please try again.'
+                            'An error occurred while creating your order. Would you like to try again?',
+                            function() {
+                                // Retry order creation
+                                proceedButton.click();
+                            }
                         );
                         throw err;
                     }
@@ -1122,9 +1187,13 @@
                         // Hide loading on error
                         hideLoadingOverlay();
                         console.error('Payment capture error:', err);
-                        showErrorModal(
+                        showErrorModalWithRetry(
                             'Payment Error',
-                            'An error occurred while processing your payment. Please try again or contact support if the problem persists.'
+                            'An error occurred while processing your payment. Would you like to try again?',
+                            function() {
+                                // Retry payment
+                                proceedButton.click();
+                            }
                         );
                     });
                 },
@@ -1132,9 +1201,13 @@
                     // Hide loading on error
                     hideLoadingOverlay();
                     console.error('PayPal error:', err);
-                    showErrorModal(
+                    showErrorModalWithRetry(
                         'Payment Error',
-                        'An error occurred during the payment process. Please try again or contact support if the problem persists.'
+                        'An error occurred during the payment process. Would you like to try again?',
+                        function() {
+                            // Retry payment
+                            proceedButton.click();
+                        }
                     );
                 },
                 onCancel: function(data) {
