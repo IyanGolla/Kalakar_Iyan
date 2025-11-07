@@ -4,7 +4,17 @@
   "main": "paypal-config.example.js",
   "scripts": {
     "build": "node build.js",
-    "vercel-build": "node build.js"
+    "vercel-build": "node build.js",
+    "dev": "vercel dev",
+    "test:webhook": "node test-webhook.js local",
+    "test:webhook:remote": "node test-webhook.js remote"
+  },
+  "dependencies": {
+    "@paypal/checkout-server-sdk": "^1.0.3"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "vercel": "^32.5.0"
   },
   "repository": {
     "type": "git",

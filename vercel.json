@@ -6,6 +6,11 @@
       "source": "/",
       "destination": "/tickets.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/webhooks/paypal.js": {
+      "maxDuration": 30
+    }
+  }
 }
 
